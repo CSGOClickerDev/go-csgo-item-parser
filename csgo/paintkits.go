@@ -2,7 +2,7 @@ package csgo
 
 import (
 	"fmt"
-
+	"regexp"
 	"github.com/pkg/errors"
 	"github.com/shopspring/decimal"
 )
@@ -56,6 +56,14 @@ func mapToPaintkit(data map[string]interface{}, language *language) (*Paintkit, 
 		if err != nil {
 			return nil, err
 		}
+
+		// Remove HTML tags
+		re := regexp.MustCompile(`<[^>]*>`)
+		withoutTags := re.ReplaceAllString(description, "")
+
+		// Remove escaped characters and replace with a single space
+		re = regexp.MustCompile(`(\\n)+`)
+		description = re.ReplaceAllString(withoutTags, " ")
 
 		response.Description = description
 	}
