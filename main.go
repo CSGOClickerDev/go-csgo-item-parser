@@ -3,8 +3,9 @@ package main
 import (
 	"encoding/json"
 	"flag"
-	"github.com/rustedturnip/go-csgo-item-parser/csgo"
 	"os"
+
+	"github.com/rustedturnip/go-csgo-item-parser/csgo"
 
 	"github.com/rustedturnip/go-csgo-item-parser/parser"
 )

@@ -2,8 +2,9 @@ package csgo
 
 import (
 	"fmt"
-	"github.com/pkg/errors"
 	"strings"
+
+	"github.com/pkg/errors"
 )
 
 // New takes the required languageData and itemData maps (from csgo_english.txt and

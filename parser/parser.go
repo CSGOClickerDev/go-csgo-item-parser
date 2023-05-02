@@ -2,12 +2,16 @@ package parser
 
 import (
 	"bufio"
+	"bytes"
 	"errors"
 	"fmt"
+	"io"
 	"os"
 	"strings"
 
 	"github.com/golang-collections/collections/stack"
+	"golang.org/x/text/encoding/unicode"
+	"golang.org/x/text/transform"
 )
 
 type token int
@@ -76,6 +80,62 @@ var (
 	}
 )
 
+func resetFileStart(file *os.File) {
+	_, err := file.Seek(0, io.SeekStart)
+	if err != nil {
+		panic(err)
+	}
+}
+
+func isUTF16(file *os.File) (bool, error) {
+	// Read the first few bytes of the file to check for the Byte Order Mark (BOM)
+	buf := make([]byte, 2)
+	_, err := file.Read(buf)
+	defer resetFileStart(file)
+	if err != nil {
+		if err == io.EOF {
+			return false, nil
+		}
+		return false, err
+	}
+
+	// Check if the bytes match the UTF-16 BOM
+	if buf[0] == 0xff && buf[1] == 0xfe {
+		return true, nil
+	}
+	if buf[0] == 0xfe && buf[1] == 0xff {
+		return true, nil
+	}
+
+	// The file does not have a UTF-16 BOM
+	return false, nil
+}
+
+func convertFileToUTF8(file *os.File) (*bytes.Buffer, error) {
+	fmt.Println("The file is encoded in UTF-16. We will try to convert it to UTF-8 in memory.")
+	utf16Reader := bufio.NewReader(file)
+	//bom := unicode.BOMOverride(utf16Reader)
+	// Right now we assume that the file is encoded in UTF-16 Little Endian.
+	// Since csgo_english.txt is encoded in UTF-16LE when copied from the game files.
+	utf16Decoder := unicode.UTF16(unicode.LittleEndian, unicode.UseBOM).NewDecoder()
+
+	utf8Reader := transform.NewReader(utf16Reader, utf16Decoder)
+
+	var buf bytes.Buffer
+	utf8Writer := bufio.NewWriter(&buf)
+	_, err := io.Copy(utf8Writer, utf8Reader)
+	if err != nil {
+		return nil, err
+	}
+
+	err = utf8Writer.Flush()
+	if err != nil {
+		return nil, err
+	}
+
+	return &buf, nil
+}
+
 func Parse(fileLocation string) (map[string]interface{}, error) {
 
 	// initialise/reset
@@ -89,8 +149,28 @@ func Parse(fileLocation string) (map[string]interface{}, error) {
 	if err != nil {
 		return nil, err
 	}
+	defer fi.Close()
 
-	s := bufio.NewScanner(fi)
+	fmt.Println("Checking if the file is encoded in UTF-16.")
+	isUTF16File, err := isUTF16(fi)
+	if err != nil {
+		return nil, err
+	}
+
+	var s *bufio.Scanner
+	if isUTF16File {
+		buf, err := convertFileToUTF8(fi)
+		if err != nil {
+			return nil, err
+		}
+		fmt.Println("Successfully converted the file to UTF-8!")
+
+		reader := bytes.NewReader(buf.Bytes())
+		s = bufio.NewScanner(reader)
+	} else {
+		fmt.Println("The file is encoded in UTF-8.")
+		s = bufio.NewScanner(fi)
+	}
 
 	lineCount := 0
 	currentLine := ""
