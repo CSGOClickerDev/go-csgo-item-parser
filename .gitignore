@@ -5,3 +5,5 @@ vscode/
 # Testing
 test_data/
 result.json
+
+.DS_Store
