@@ -2,8 +2,9 @@ package csgo
 
 import (
 	"fmt"
-	"github.com/pkg/errors"
 	"strconv"
+
+	"github.com/pkg/errors"
 )
 
 // Rarity represents a Csgo item Rarity.

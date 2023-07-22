@@ -3,6 +3,8 @@ package csgo
 import (
 	"fmt"
 	"regexp"
+	"strings"
+
 	"github.com/pkg/errors"
 	"github.com/shopspring/decimal"
 )
@@ -95,9 +97,71 @@ func (c *csgoItems) getPaintkits() (map[string]*Paintkit, error) {
 
 	response := map[string]*Paintkit{}
 
+	// This logic should definitely be refactored, & moved into separate functions. But yolo.
+
+	globalRarities, err := c.getRarities()
+	if err != nil {
+		panic(err)
+	}
+	raritiesSet := map[string]bool{}
+	for rarity, _ := range globalRarities {
+		raritiesSet[rarity] = true
+	}
+
+	clientLootList, err := crawlToType[map[string]interface{}](c.items, "client_loot_lists")
+	if err != nil {
+		return nil, errors.Wrap(err, fmt.Sprintf("unable to locate client_loot_lists amongst items: %s", err.Error()))
+	}
+
+	// get list of all collection rarities in loot list
+	raritiesLootList := []string{}
+	for key, _ := range clientLootList {
+		substr := strings.Split(key, "_")
+		lastItemIndex := len(substr) - 1
+		if raritiesSet[substr[lastItemIndex]] {
+			raritiesLootList = append(raritiesLootList, key)
+		}
+	}
+
+	delimiterFunc := func(c rune) bool {
+		return c == '[' || c == ']'
+	}
+
+	// goal is item_name -> rarity
+	itemToRarity := map[string]string{}
+
+	for _, rarityCollection := range raritiesLootList {
+		itemPaintKit, err := crawlToType[map[string]interface{}](clientLootList, rarityCollection)
+		if err != nil {
+			return nil, errors.Wrap(err, fmt.Sprintf("unable to locate rarityCollection amongst items: %s", err.Error()))
+		}
+
+		for key, _ := range itemPaintKit {
+			// Split keystring by brackets delimiters:
+			substr := strings.FieldsFunc(key, delimiterFunc)
+			for i, s := range substr {
+				if i == 0 {
+					paintKitId := s
+					substr := strings.Split(rarityCollection, "_")
+					lastItemIndex := len(substr) - 1
+					rarity := substr[lastItemIndex]
+
+					itemToRarity[paintKitId] = rarity
+				}
+			}
+		}
+	}
+
 	rarities, err := crawlToType[map[string]interface{}](c.items, "paint_kits_rarity")
 	if err != nil {
 		return nil, errors.Wrap(err, fmt.Sprintf("unable to extract paint_kits_rarity: %s", err.Error()))
+	}
+
+	// if loot list rarity does not equal paint kit rarity, override it with loot list rarity.
+	for key, val := range rarities {
+		if val.(string) != itemToRarity[key] {
+			rarities[key] = itemToRarity[key]
+		}
 	}
 
 	kits, err := crawlToType[map[string]interface{}](c.items, "paint_kits")
