@@ -7,7 +7,6 @@ import (
 	"fmt"
 	"io"
 	"os"
-	"regexp"
 	"strings"
 
 	"github.com/golang-collections/collections/stack"
@@ -150,20 +149,6 @@ func convertFileToUTF8(file *os.File) (*bytes.Buffer, error) {
 	return &buf, nil
 }
 
-// Maybe removalable
-func isWhitespace(line string) bool {
-	// The new version of csgo_english contains some extra empty lines, however these can have varying amounts of length.
-	// So we will use a regex to check if the line is empty (or only contains whitespace).
-	// Note: This is a hack, but U+FEFF is terrible.
-
-	// Create a regular expression pattern to match whitespace or U+FEFF (BOM)
-
-	pattern := regexp.MustCompile(`^(|\s|\n|\xEF\xBB\xBF)*$`)
-
-	// Use the MatchString function to check if the line matches the pattern
-	return pattern.MatchString(line)
-}
-
 func Parse(fileLocation string) (map[string]interface{}, error) {
 
 	// initialise/reset
@@ -285,7 +270,7 @@ func getLineType(line string) (token, []string, error) {
 	line = strings.Trim(line, whitespaceCutset)
 
 	// if line is 0 chars after trim (or is a comment), it is a blank line to ignore
-	if len(line) == 0 || strings.HasPrefix(line, "//") || isWhitespace(line) {
+	if len(line) == 0 || strings.HasPrefix(line, "//") {
 		return empty, nil, nil
 	}
 
