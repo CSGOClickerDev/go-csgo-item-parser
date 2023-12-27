@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"io"
 	"os"
+	"regexp"
 	"strings"
 
 	"github.com/golang-collections/collections/stack"
@@ -89,15 +90,28 @@ func resetFileStart(file *os.File) {
 
 func isUTF16(file *os.File) (bool, error) {
 	// Read the first few bytes of the file to check for the Byte Order Mark (BOM)
-	buf := make([]byte, 2)
+	buf := make([]byte, 3)
 	_, err := file.Read(buf)
-	defer resetFileStart(file)
 	if err != nil {
+		defer resetFileStart(file)
 		if err == io.EOF {
 			return false, nil
 		}
 		return false, err
 	}
+
+	// UTF-8 BOM checks first (U+FEFF). See https://symbl.cc/en/FEFF/
+	if buf[0] == 0xef && buf[1] == 0xbb && buf[2] == 0xbf {
+		return false, nil
+	}
+	// Corresponds to the U+FEFF unicode character in decimal. This is a hack.
+	if buf[0] == 239 && buf[1] == 187 && buf[2] == 191 {
+		return false, nil
+	}
+
+	// We only reset the file pointer if we are sure that the file is not UTF-8.
+	// Not skipping the UTF-8 BOM causes issues with parsing.
+	defer resetFileStart(file)
 
 	// Check if the bytes match the UTF-16 BOM
 	if buf[0] == 0xff && buf[1] == 0xfe {
@@ -107,7 +121,7 @@ func isUTF16(file *os.File) (bool, error) {
 		return true, nil
 	}
 
-	// The file does not have a UTF-16 BOM
+	// The file does not have a BOM, so it is not UTF-16
 	return false, nil
 }
 
@@ -134,6 +148,20 @@ func convertFileToUTF8(file *os.File) (*bytes.Buffer, error) {
 	}
 
 	return &buf, nil
+}
+
+// Maybe removalable
+func isWhitespace(line string) bool {
+	// The new version of csgo_english contains some extra empty lines, however these can have varying amounts of length.
+	// So we will use a regex to check if the line is empty (or only contains whitespace).
+	// Note: This is a hack, but U+FEFF is terrible.
+
+	// Create a regular expression pattern to match whitespace or U+FEFF (BOM)
+
+	pattern := regexp.MustCompile(`^(|\s|\n|\xEF\xBB\xBF)*$`)
+
+	// Use the MatchString function to check if the line matches the pattern
+	return pattern.MatchString(line)
 }
 
 func Parse(fileLocation string) (map[string]interface{}, error) {
@@ -257,7 +285,7 @@ func getLineType(line string) (token, []string, error) {
 	line = strings.Trim(line, whitespaceCutset)
 
 	// if line is 0 chars after trim (or is a comment), it is a blank line to ignore
-	if len(line) == 0 || strings.HasPrefix(line, "//") {
+	if len(line) == 0 || strings.HasPrefix(line, "//") || isWhitespace(line) {
 		return empty, nil, nil
 	}
 
