@@ -175,6 +175,12 @@ func (c *csgoItems) getPaintkits() (map[string]*Paintkit, error) {
 			return nil, fmt.Errorf("unexpected Paintkit layout in paint_kits for index (%s)", index)
 		}
 
+		// skip `newcs2` paintkits until they're released (CSGO_set_community_33)
+		// TODO: remove once added to csgo_english.txt
+		if strings.Contains(mKit["name"].(string), "newcs2") {
+			continue
+		}
+
 		converted, err := mapToPaintkit(mKit, c.language)
 		if err != nil {
 			return nil, err

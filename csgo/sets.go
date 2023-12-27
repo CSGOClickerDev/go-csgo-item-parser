@@ -2,9 +2,10 @@ package csgo
 
 import (
 	"fmt"
-	"github.com/pkg/errors"
 	"regexp"
 	"strings"
+
+	"github.com/pkg/errors"
 )
 
 var (
@@ -118,6 +119,12 @@ func (c *csgoItems) getWeaponSets() (map[string]*WeaponSet, error) {
 		data, ok := set.(map[string]interface{})
 		if !ok {
 			return nil, errors.New("unexpected format for item_set data")
+		}
+
+		// skip `newcs2` paintkits until they're released (CSGO_set_community_33)
+		// TODO: remove once added to csgo_english.txt
+		if setId == "set_community_33" {
+			continue
 		}
 
 		setObj, err := mapToWeaponSet(setId, data, c.language)
