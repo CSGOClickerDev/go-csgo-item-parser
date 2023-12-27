@@ -33,5 +33,10 @@ The program currently works by accepting the file locations of the aforementione
 go-csgo-item-parser --csgo-items=/path/to/items_game.txt --csgo-language=/path/to/csgo_english.txt --output=/path/to/result.json
 ```
 
+Example with submodule from GameTracking-CSGO/CS2 (after cloning you can run `git submodule update --init`)
+```bash
+go-csgo-item-parser --csgo-items GameTracking-CSGO/game/csgo/pak01_dir/scripts/items/items_game.txt --csgo-language GameTracking-CSGO/game/csgo/pak01_dir/resource/csgo_english.txt
+```
+
 The output file will contain the currently supported entities in json format.
 
