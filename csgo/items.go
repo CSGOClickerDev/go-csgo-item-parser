@@ -3,7 +3,6 @@ package csgo
 import (
 	"fmt"
 	"strconv"
-	"strings"
 
 	"github.com/pkg/errors"
 )
@@ -24,11 +23,6 @@ var (
 		},
 
 		"melee_unusual": func(items *csgoItems, index int, data map[string]interface{}) (interface{}, error) {
-			// skip kukri knife until it is released
-			// TODO: remove once added to csgo_english.txt
-			if strings.Contains(data["name"].(string), "knife_kukri") {
-				return nil, nil
-			}
 			return mapToWeapon(index, data, items.prefabs, items.language)
 		},
 
@@ -37,11 +31,6 @@ var (
 		},
 
 		"weapon_case": func(items *csgoItems, index int, data map[string]interface{}) (interface{}, error) {
-			// skip `newcs2` paintkits until they're released (CSGO_set_community_33)
-			// TODO: remove once added to csgo_english.txt
-			if data["name"] == "crate_community_33" {
-				return nil, nil
-			}
 			return mapToWeaponCrate(index, data, items.language)
 		},
 
