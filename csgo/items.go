@@ -342,7 +342,7 @@ func (c *csgoItems) getItems() (*itemContainer, error) {
 
 		iIndex, err := strconv.Atoi(index)
 		if err != nil {
-			return nil, errors.Wrap(err, fmt.Sprintf("unable to interpret item index (%s) as int", iIndex))
+			return nil, errors.Wrap(err, fmt.Sprintf("unable to interpret item index (%d) as int", iIndex))
 		}
 
 		itemMap, ok := itemData.(map[string]interface{})

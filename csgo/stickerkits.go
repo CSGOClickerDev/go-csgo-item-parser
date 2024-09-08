@@ -146,7 +146,7 @@ StickerkitLoop:
 
 		iIndex, err := strconv.Atoi(index)
 		if err != nil {
-			return nil, errors.Wrap(err, fmt.Sprintf("unable to interpret Stickerkit index (%s) as int", iIndex))
+			return nil, errors.Wrap(err, fmt.Sprintf("unable to interpret Stickerkit index (%d) as int", iIndex))
 		}
 
 		mKit, ok := kit.(map[string]interface{})
