@@ -1,4 +1,4 @@
-module github.com/rustedturnip/go-csgo-item-parser
+module github.com/CSGOClickerDev/go-csgo-item-parser
 
 go 1.23
 

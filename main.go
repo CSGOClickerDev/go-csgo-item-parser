@@ -5,9 +5,9 @@ import (
 	"flag"
 	"os"
 
-	"github.com/rustedturnip/go-csgo-item-parser/csgo"
+	"github.com/CSGOClickerDev/go-csgo-item-parser/csgo"
 
-	"github.com/rustedturnip/go-csgo-item-parser/parser"
+	"github.com/CSGOClickerDev/go-csgo-item-parser/parser"
 )
 
 var (
